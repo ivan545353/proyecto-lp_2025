@@ -1,0 +1,70 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing: border-box;
+}
+
+.body{
+    background-color:#f4f6fa;
+}
+
+body,html{
+    height: 100%;
+}
+
+nav{
+    font-weight: 600;
+}
+
+/* Estilo general de la barra */
+.navbar {
+    background-color: #ffffff !important;
+    border-bottom: 1px solid #e0e0e0; /* Línea sutil inferior */
+}
+
+/* Color del texto de los enlaces */
+.navbar .nav-link {
+    color: #000000 !important;
+    transition: color 0.3s ease, background-color 0.3s ease;
+    border-radius: 5px;
+}
+
+/* Hover en los enlaces */
+.navbar .nav-link:hover {
+    color: #ffffff !important;
+    background-color: #000000 !important;
+    border-radius: 5px;
+}
+
+/* Dropdown personalizado */
+.navbar .dropdown-menu {
+    border: 1px solid #e0e0e0;
+}
+
+.navbar .dropdown-item:hover {
+    background-color: #f0f0f0;
+    color: #000000;
+}
+
+/* Logo */
+.navbar-brand img {
+    height: 40px;
+}
+
+footer{
+    background-color: #FFFFFF;
+}
+
+.nav-item a{
+    padding-left: 1em;
+}
+
+@media screen and (max-width:500px){
+    .filtros{
+        justify-content: center;
+    }
+    .filtros input, .filtros select, .filtros a, .filtros button{
+        width: 100%;
+        max-width: 100% !important;
+    }
+}
