@@ -4,6 +4,7 @@ namespace app\libs\http;
 
 final class Response{
     private $controller, $action, $error, $message, $result;
+    private $status = 200;
 
     public function __construct(){
         $this->setController("");
@@ -33,7 +34,13 @@ final class Response{
         $this->result = $result;
     }
 
+    public function setStatus(int $status): void {
+        $this->status = $status;
+    }
+
     public function send(): void{
+        http_response_code($this->status);
+        
         header("Content-Type: application/json; charset=utf-8");
         echo json_encode([
             "controller"    => $this->controller,

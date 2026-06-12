@@ -16,10 +16,11 @@ final class App{
     public static function run(){
         $pipeline = new Pipeline();
         // Esto es encadenamiento de metodos, gracias al return $this del metodo pipe
-        $pipeline->pipe(new ExceptionHandlerMiddleware())
-        ->pipe(new AuthenticationHandlerMiddleware())
-        ->pipe(new AuthorizationHandlerMiddleware())
-        ->pipe(new RouterHandlerMiddleware());
+        $pipeline->pipe(new CorsHandlerMiddleware())
+                ->pipe(new ExceptionHandlerMiddleware())
+                ->pipe(new AuthenticationHandlerMiddleware())
+                ->pipe(new AuthorizationHandlerMiddleware())
+                ->pipe(new RouterHandlerMiddleware());
 
         $pipeline->process(new Request(), new Response());
     }
