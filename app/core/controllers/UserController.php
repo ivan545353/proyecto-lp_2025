@@ -11,14 +11,7 @@ use app\core\models\dto\UserDto;
 
 final class UserController extends BaseController implements InterfaceController {
 
-    public function index(Request $request, Response $response): void {
-        //HAGO UN PUSH DE LOS SCRIPTS QUE TIENE QUE CARGAR LA PLANTILLA
-        array_push($this->scripts, "app/js/{$request->getController()}/{$request->getAction()}.js");
-        array_push($this->styles, "app/css/{$request->getController()}/{$request->getAction()}.css");
-        
-        $this->setCurrentView($request);
-        require_once APP_FILE_TEMPLATE;
-    }
+  
 
     public function load(Request $request, Response $response): void {
         $service = new UserService();
@@ -27,32 +20,18 @@ final class UserController extends BaseController implements InterfaceController
         $response->send();
     }
 
-    public function create(Request $request, Response $response): void {
-        array_push($this->scripts, "app/js/{$request->getController()}/{$request->getAction()}.js");
-        array_push($this->styles, "app/css/{$request->getController()}/{$request->getAction()}.css");
-        
-        $response->setMessage("<p>Redirigiendo a User/create.</p>");
-        $this->setCurrentView($request);
-        require_once APP_FILE_TEMPLATE;
-    }
+   
 
     public function save(Request $request, Response $response): void {
         $dto = new UserDto($request->getDataFromInput());
         $service = new UserService();
         $service->save($dto);
 
-        $response->setMessage("<p>Se agregó un nuevo usuario al sistema</p>");
+        $response->setMessage("Se agregó un nuevo usuario al sistema");
         $response->send();
     }
 
-    public function edit(Request $request, Response $response): void {
-        array_push($this->scripts, "app/js/{$request->getController()}/{$request->getAction()}.js");
-        array_push($this->styles, "app/css/{$request->getController()}/{$request->getAction()}.css");
-        
-        $response->setMessage("<p>Redirigiendo a user/edit.</p>");
-        $this->setCurrentView($request);
-        require_once APP_FILE_TEMPLATE;
-    }
+   
 
 
     public function update(Request $request, Response $response): void {
@@ -60,7 +39,7 @@ final class UserController extends BaseController implements InterfaceController
         $service = new UserService();
         $service->update($dto);
 
-        $response->setMessage("<p>Se modificó el usuario correctamente</p>");
+        $response->setMessage("Se modificó el usuario correctamente");
         $response->send();
     }
 
@@ -69,18 +48,10 @@ final class UserController extends BaseController implements InterfaceController
         $dto = $service->load($request->getId());
         $service->delete($dto);
 
-        $response->setMessage("<p>Se eliminó el usuario correctamente</p>");
+        $response->setMessage("Se eliminó el usuario correctamente");
         $response->send();
     }
 
-    public function myAccount(Request $request, Response $response): void {
-        array_push($this->scripts, "app/js/{$request->getController()}/{$request->getAction()}.js");
-        array_push($this->styles, "app/css/{$request->getController()}/{$request->getAction()}.css");
-        
-        $response->setMessage("<p>Redirigiendo a User/myAccount.</p>");
-        $this->setCurrentView($request);
-        require_once APP_FILE_TEMPLATE;
-    }
 
     public function list(Request $request, Response $response): void {
         $filters = [
@@ -99,7 +70,7 @@ final class UserController extends BaseController implements InterfaceController
         $id = (int) $request->getId();
         $service = new UserService();
         $service->enable($id);
-        $response->setMessage("<p>El usuario fue habilitado.</p>");
+        $response->setMessage("El usuario fue habilitado.");
         $response->send();
     }
 
@@ -107,7 +78,7 @@ final class UserController extends BaseController implements InterfaceController
         $id = (int) $request->getId();
         $service = new UserService();
         $service->disable($id);
-        $response->setMessage("<p>El usuario fue deshabilitado.</p>");
+        $response->setMessage("El usuario fue deshabilitado.");
         $response->send();
     }
 
@@ -115,7 +86,7 @@ final class UserController extends BaseController implements InterfaceController
         $id = (int) $request->getId();
         $service = new UserService();
         $service->reset($id);
-        $response->setMessage("<p>La contraseña fue restablecida.</p>");
+        $response->setMessage("La contraseña fue restablecida.");
         $response->send();
     }
 
@@ -130,8 +101,9 @@ final class UserController extends BaseController implements InterfaceController
             $response->send();
             return;
         }
-
-        $userId = $_SESSION["usuarioID"] ?? null;
+        // TODO Fase 4: reemplazar $_SESSION por $request->getAuthUser()
+        // En lugar de:  $userId = $_SESSION["usuarioID"] ?? null;
+        $userId = $request->getAuthUser()->usuarioID ?? null;
         $currentPassword = $data["currentPassword"] ?? null;
         $newPassword = $data["newPassword"] ?? null;
         $confirmPassword = $data["confirmPassword"] ?? null;
@@ -152,7 +124,7 @@ final class UserController extends BaseController implements InterfaceController
         $success = $service->changePassword($userId, $currentPassword, $newPassword);
 
         if ($success) {
-            $response->setMessage("<p>Contraseña actualizada correctamente</p>");
+            $response->setMessage("Contraseña actualizada correctamente");
         } else {
             $response->setError("La contraseña actual es incorrecta");
         }
@@ -161,7 +133,8 @@ final class UserController extends BaseController implements InterfaceController
     }
 
     public function getCurrent(Request $request, Response $response): void {
-        $userId = $_SESSION["usuarioID"] ?? null;
+        // En lugar de:  $userId = $_SESSION["usuarioID"] ?? null;
+        $userId = $request->getAuthUser()->usuarioID ?? null;
 
         if (!$userId) {
             $response->setController("user");

@@ -8,6 +8,7 @@ use app\libs\pipeline\middlewares\AuthenticationHandlerMiddleware;
 use app\libs\pipeline\middlewares\AuthorizationHandlerMiddleware;
 use app\libs\http\Request;
 use app\libs\http\Response;
+use app\libs\pipeline\middlewares\CorsHandlerMiddleware;
 
 final class App{
 

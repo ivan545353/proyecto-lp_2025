@@ -11,13 +11,6 @@ use app\core\models\dto\ItemDto;
 
 final class ItemController extends BaseController implements InterfaceController {
 
-    public function index(Request $request, Response $response): void {
-        array_push($this->scripts, "app/js/{$request->getController()}/{$request->getAction()}.js");
-        array_push($this->styles, "app/css/{$request->getController()}/{$request->getAction()}.css");
-        
-        $this->setCurrentView($request);
-        require_once APP_FILE_TEMPLATE;
-    }
 
     public function load(Request $request, Response $response): void {
         $service = new ItemService();
@@ -26,14 +19,6 @@ final class ItemController extends BaseController implements InterfaceController
         $response->send();
     }
 
-    public function create(Request $request, Response $response): void {
-        array_push($this->scripts, "app/js/{$request->getController()}/{$request->getAction()}.js");
-        array_push($this->styles, "app/css/{$request->getController()}/{$request->getAction()}.css");
-        
-        $response->setMessage("<p>Redirigiendo a Item/create.</p>");
-        $this->setCurrentView($request);
-        require_once APP_FILE_TEMPLATE;
-    }
 
     public function save(Request $request, Response $response): void {
         $dto = new ItemDto($request->getDataFromInput());
@@ -44,14 +29,6 @@ final class ItemController extends BaseController implements InterfaceController
         $response->send();
     }
 
-    public function edit(Request $request, Response $response): void {
-        array_push($this->scripts, "app/js/{$request->getController()}/{$request->getAction()}.js");
-        array_push($this->styles, "app/css/{$request->getController()}/{$request->getAction()}.css");
-        
-        $response->setMessage("<p>Redirigiendo a item/edit.</p>");
-        $this->setCurrentView($request);
-        require_once APP_FILE_TEMPLATE;
-    }
 
     public function update(Request $request, Response $response): void {
         $dto = new ItemDto($request->getDataFromInput());
@@ -72,13 +49,13 @@ final class ItemController extends BaseController implements InterfaceController
     }
 
     public function list(Request $request, Response $response): void {
-        // Leer el body JSON
-        $filters = $request->getDataFromInput();  // ← ahora viene desde el POST
-
-        $service = new ItemService();
-        $productos = $service->list($filters ?? []);
-
-        $response->setResult($productos);
-        $response->send();
-    }
+    $filters = [
+        "categoriaId" => $request->getParameterValue("categoriaId", null),
+        "limit"       => $request->getParameterValue("limit", null)
+    ];
+    $service = new ItemService();
+    $productos = $service->list($filters);
+    $response->setResult($productos);
+    $response->send();
+}
 }
