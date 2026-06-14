@@ -7,20 +7,20 @@ use app\core\models\dto\UserDto;
 use app\core\models\dto\base\InterfaceDto;
 use app\core\services\base\InterfaceService;
 use app\libs\database\Connection;
+use app\core\exceptions\ValidationException;
 
 final class UserService implements InterfaceService {
 
     public function load(int $id): InterfaceDto {
         $dao = new UserDao(Connection::get());
-        $data = $dao->load($id);
-        return new UserDto($data);
+        return new UserDto($dao->load($id));
     }
 
     public function save(InterfaceDto $dto): void {
         $this->validate($dto);
         $data = $dto->toArray();
         unset($data["id"]);
-        // Hashear la clave si está definida
+
         if (!empty($data["clave"])) {
             $data["clave"] = password_hash($data["clave"], PASSWORD_DEFAULT);
         }
@@ -30,20 +30,16 @@ final class UserService implements InterfaceService {
     }
 
     public function update(InterfaceDto $dto): void {
-        $this->validateUpdate($dto); // Nueva validación específica para update
+        $this->validateUpdate($dto);
 
         $dao = new UserDao(Connection::get());
-
-        // Validación de existencia
         $usuarioExistente = $dao->load($dto->getId());
 
         $data = $dto->toArray();
 
-        // Si se envió una nueva clave, hashearla
         if (!empty($data["clave"])) {
             $data["clave"] = password_hash($data["clave"], PASSWORD_DEFAULT);
         } else {
-            // Si no se envió clave nueva, mantener la original
             $data["clave"] = $usuarioExistente["clave"];
         }
 
@@ -52,8 +48,7 @@ final class UserService implements InterfaceService {
 
     public function delete(InterfaceDto $dto): void {
         $dao = new UserDao(Connection::get());
-        //Validación de existencia utilizando el load del dao que ya valida si existe o no
-        $dao->load($dto->getId());
+        $dao->load($dto->getId()); // valida existencia
         $dao->delete($dto->getId());
     }
 
@@ -64,73 +59,61 @@ final class UserService implements InterfaceService {
 
     private function validate(UserDto $dto): void {
         if ($dto->getNombres() === "") {
-            throw new \Exception("<p>El <strong>nombre</strong> es obligatorio.</p>");
+            throw new ValidationException("El nombre es obligatorio.");
         }
         if ($dto->getCuenta() === "") {
-            throw new \Exception("<p>El <strong>usuario</strong> es obligatorio.</p>");
+            throw new ValidationException("El usuario es obligatorio.");
         }
         if ($dto->getClave() === "") {
-            throw new \Exception("<p>La <strong>clave</strong> es obligatoria.</p>");
+            throw new ValidationException("La clave es obligatoria.");
         }
-
-        
+        if ($dto->getPerfilId() === 0) {
+            throw new ValidationException("Debe seleccionar un perfil.");
+        }
     }
 
-    // Métodos adicionales del servicio de Usuario
+    private function validateUpdate(UserDto $dto): void {
+        if ($dto->getNombres() === "") {
+            throw new ValidationException("El nombre es obligatorio.");
+        }
+        if ($dto->getCuenta() === "") {
+            throw new ValidationException("El usuario es obligatorio.");
+        }
+        if ($dto->getPerfilId() === 0) {
+            throw new ValidationException("Debe seleccionar un perfil.");
+        }
+        // La clave no se valida en update: puede no cambiar.
+    }
+
+    // ================== Métodos especiales ===================
 
     public function enable(int $id): void {
         $dao = new UserDao(Connection::get());
-        // Validación
         $dao->load($id);
-
         $dao->enable($id);
     }
 
     public function disable(int $id): void {
         $dao = new UserDao(Connection::get());
-
-        // Validación
         $dao->load($id);
-
         $dao->disable($id);
     }
 
     public function reset(int $id): void {
         $dao = new UserDao(Connection::get());
-
-        // Validación
         $dao->load($id);
-
         $dao->reset($id);
-    }
-
-    private function validateUpdate(UserDto $dto): void {
-        if ($dto->getNombres() === "") {
-            throw new \Exception("<p>El <strong>nombre</strong> es obligatorio.</p>");
-        }
-        if ($dto->getCuenta() === "") {
-            throw new \Exception("<p>El <strong>usuario</strong> es obligatorio.</p>");
-        }
-        // Nota: no se valida que la clave esté vacía en update (porque puede no cambiar)
     }
 
     public function changePassword(int $userId, string $currentPassword, string $newPassword): bool {
         $dao = new UserDao(Connection::get());
-
         $usuario = $dao->load($userId);
-        if (!$usuario) return false;
 
-        // Verificación de contraseña actual
         if (!password_verify($currentPassword, $usuario["clave"])) {
             return false;
         }
 
-        // Generar nueva clave hasheada
         $nuevaClaveHash = password_hash($newPassword, PASSWORD_DEFAULT);
-
-        // Actualizar la clave usando un método del dao (puede ser update parcial o uno dedicado)
         return $dao->updatePassword($userId, $nuevaClaveHash);
     }
-
-
 }
