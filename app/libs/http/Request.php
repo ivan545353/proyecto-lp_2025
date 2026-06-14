@@ -38,17 +38,13 @@ final class Request{
     }
 
     public function getParameterValue(string $paramName, ?string $defaultValue) : ?string{
-        $value = null;
-        switch ($this->getMethod()){
-            case "GET":
-                $value = $_GET[$paramName] ?? $defaultValue;
-                break;
-            case "POST":
-                $value = $_POST[$paramName] ?? $defaultValue;
-                break;
-        }
-        return $value;
+    // Para POST con formularios clásicos, $_POST; para el resto (GET/PUT/DELETE)
+    // los parámetros de ruta llegan por la URL, es decir $_GET.
+    if ($this->getMethod() === "POST" && isset($_POST[$paramName])) {
+        return $_POST[$paramName];
     }
+    return $_GET[$paramName] ?? $defaultValue;
+}
 
     public function getDataFromInput(): ?array{
         return json_decode(file_get_contents("php://input"), true);
