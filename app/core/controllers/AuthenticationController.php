@@ -10,9 +10,11 @@ use app\core\models\dto\LoginDto;
 final class AuthenticationController extends BaseController {
 
     public function login(Request $request, Response $response): void {
-        $dto = new LoginDto($request->getDataFromInput());
-        $service = new AuthenticationService();
-        $service->login($dto);
+    $dto = new LoginDto($request->getDataFromInput());
+    $service = new AuthenticationService();
+        $token = $service->login($dto);
+
+        $response->setResult(["token" => $token]);
         $response->setMessage("OK");
         $response->send();
     }

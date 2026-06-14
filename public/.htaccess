@@ -2,6 +2,7 @@
 Options -Indexes
 #Sobreescribe las reglas de navegación
 RewriteEngine On
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 RewriteBase /lab_prog_2025_reales_ivan_backend/public/
 RewriteRule ^([a-zA-Z]+)$ index.php?controller=$1
 RewriteRule ^([a-zA-Z]+)/([a-zA-Z]+)$ index.php?controller=$1&action=$2

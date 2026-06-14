@@ -11,6 +11,10 @@ class ComposerStaticInitc5fa477461f16b4d52af08ed8209e64a
         array (
             'app\\' => 4,
         ),
+        'F' => 
+        array (
+            'Firebase\\JWT\\' => 13,
+        ),
         'D' => 
         array (
             'Dompdf\\' => 7,
@@ -21,6 +25,10 @@ class ComposerStaticInitc5fa477461f16b4d52af08ed8209e64a
         'app\\' => 
         array (
             0 => __DIR__ . '/../..' . '/',
+        ),
+        'Firebase\\JWT\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/firebase/php-jwt/src',
         ),
         'Dompdf\\' => 
         array (

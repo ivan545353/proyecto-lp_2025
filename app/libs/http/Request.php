@@ -5,6 +5,7 @@ namespace app\libs\http;
 final class Request{
     
     private $controller, $action;
+    private $authUser = null;
 
     public function __construct(){
         $this->setController($_GET["controller"] ?? APP_DEFAULT_CONTROLLER);
@@ -52,4 +53,8 @@ final class Request{
     public function getDataFromInput(): ?array{
         return json_decode(file_get_contents("php://input"), true);
     }
+
+    public function setAuthUser($authUser): void { $this->authUser = $authUser; }
+
+    public function getAuthUser() { return $this->authUser; }
 }

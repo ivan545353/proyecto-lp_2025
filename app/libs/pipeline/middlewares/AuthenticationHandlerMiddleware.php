@@ -6,6 +6,9 @@ use app\libs\pipeline\middlewares\base\BaseMiddleware;
 use app\libs\pipeline\middlewares\base\InterfaceMiddleware;
 use app\libs\http\Request;
 use app\libs\http\Response;
+use app\core\exceptions\AuthenticationException;
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 
 final class AuthenticationHandlerMiddleware extends BaseMiddleware implements InterfaceMiddleware {
 
@@ -13,34 +16,50 @@ final class AuthenticationHandlerMiddleware extends BaseMiddleware implements In
         parent::__construct();
     }
 
-    public function Handler(Request $request, Response $response): void {
-        session_start();
+    public function handler(Request $request, Response $response): void {
+        $controller = $request->getController();
+        $action     = $request->getAction();
 
-        $isApiCall = isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json');
-
-        if ($isApiCall) {
+        // La ruta de login es pública: no exige token
+        if ($controller === APP_AUTHENTICATION_CONTROLLER && $action === APP_LOGIN_ACTION) {
             $this->handlerNext($request, $response);
             return;
         }
 
-        $tokenActivo = isset($_SESSION["token"]) && $_SESSION["token"] === APP_TOKEN;
-        $controller = $request->getController();
-        $action = $request->getAction();
-
-        // Si ya hay sesión y se intenta ir al login, redirigir a home
-        if ($tokenActivo && $controller === APP_AUTHENTICATION_CONTROLLER && $action === APP_LOGIN_ACTION) {
-            $request->setController("home");
-            $request->setAction("index");
+        // Extraer el token del header Authorization: Bearer <token>
+        $token = $this->getBearerToken();
+        if ($token === null) {
+            throw new AuthenticationException("No autenticado. Falta el token.");
         }
 
-        // Si no hay sesión y no está en login, redirigir al login
-        if (!$tokenActivo && !($controller === APP_AUTHENTICATION_CONTROLLER && $action === APP_LOGIN_ACTION)) {
-            $request->setController(APP_AUTHENTICATION_CONTROLLER);
-            $request->setAction(APP_LOGIN_ACTION);
+        try {
+            $payload = JWT::decode($token, new Key(JWT_SECRET, 'HS256'));
+        } catch (\Exception $ex) {
+            throw new AuthenticationException("Token inválido o expirado.");
         }
+
+        // Inyectar el usuario en el Request para el resto de la cadena
+        $request->setAuthUser($payload);
 
         $this->handlerNext($request, $response);
     }
 
+    private function getBearerToken(): ?string {
+        $headers = null;
 
+        if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+            $headers = $_SERVER['HTTP_AUTHORIZATION'];
+        } elseif (function_exists('apache_request_headers')) {
+            $requestHeaders = apache_request_headers();
+            $requestHeaders = array_change_key_case($requestHeaders, CASE_LOWER);
+            if (isset($requestHeaders['authorization'])) {
+                $headers = $requestHeaders['authorization'];
+            }
+        }
+
+        if ($headers !== null && preg_match('/Bearer\s+(.+)/i', $headers, $matches)) {
+            return trim($matches[1]);
+        }
+        return null;
+    }
 }

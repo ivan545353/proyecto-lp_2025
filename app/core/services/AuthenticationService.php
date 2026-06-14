@@ -3,9 +3,10 @@
 namespace app\core\services;
 
 use app\core\models\dao\UserDao;
-use app\core\models\dto\UserDto;
 use app\libs\database\Connection;
 use app\core\models\dto\LoginDto;
+use app\core\exceptions\AuthenticationException;
+use Firebase\JWT\JWT;
 
 final class AuthenticationService {
 
@@ -15,47 +16,37 @@ final class AuthenticationService {
         $this->dao = new UserDao(Connection::get());
     }
 
-    public function login(LoginDto $login): void {
-       $conn = Connection::get();
+    public function login(LoginDto $login): string {
+        $usuario = $this->dao->login($login->getUserName());
 
-       //AUTENTICACIÓN DEL USUARIO
-       $usuarioDao = new UserDao($conn);
-       $usuario = $usuarioDao->login($login->getUserName());
-
-       if(!password_verify($login->getPassword(), $usuario["clave"])){
-        throw new \Exception("El usuario o la clave es incorrecta.");
-       }
-
-       if($usuario["estado"] !== 1){
-        throw new \Exception("Su cuenta está inactiva.");
-       }
-
-       if($usuario["resetPass"] !== 0){
-        throw new \Exception("Su clave ha caducado.");
-       }
-
-       //SE REGISTRAN LAS VARIABLES DE SESIÓN
-       $_SESSION["token"] = APP_TOKEN;
-       $_SESSION["usuarioID"] =(int) $usuario["id"];
-       $_SESSION["usuario"] = $usuario["cuenta"];
-       $_SESSION["perfil"] = $usuario["perfil"];
-       $_SESSION["correo"] = $usuario["correo"];
-    }
-
-
-    /**
-     * Cierra la sesión actual.
-     */
-    public function logout(): void {
-        session_unset();
-
-        if (ini_get("session.use_cookies")){
-            $params = session_get_cookie_params();
-            setcookie(session_name(), '', time() - 42000, $params["path"],
-            $params["domain"], $params["secure"], $params["httponly"]);
+        // Usuario inexistente: $usuario viene null/false
+        if (!$usuario || !password_verify($login->getPassword(), $usuario["clave"])) {
+            throw new AuthenticationException("El usuario o la clave es incorrecta.");
         }
 
-        session_destroy();
+        if ($usuario["estado"] != 1) {
+            throw new AuthenticationException("Su cuenta está inactiva.");
+        }
+
+        if ($usuario["resetPass"] != 0) {
+            throw new AuthenticationException("Su clave ha caducado.");
+        }
+
+        // Generar el JWT con los datos del usuario
+        $payload = [
+            "usuarioID" => (int) $usuario["id"],
+            "cuenta"    => $usuario["cuenta"],
+            "perfil"    => $usuario["perfil"],
+            "correo"    => $usuario["correo"],
+            "iat"       => time(),
+            "exp"       => time() + JWT_EXPIRATION
+        ];
+
+        return JWT::encode($payload, JWT_SECRET, 'HS256');
     }
 
+    public function logout(): void {
+        // Con JWT el logout es del lado del cliente (descartar el token).
+        // No hay estado en el servidor que limpiar.
+    }
 }

@@ -14,5 +14,7 @@
             "email": "ivan545353@gmail.com"
         }
     ],
-    "require": {}
+    "require": {
+        "firebase/php-jwt": "^7.1"
+    }
 }
