@@ -155,4 +155,10 @@ final class UserController extends BaseController implements InterfaceController
 
         $response->send();
     }
+
+    public function perfiles(Request $request, Response $response): void {
+        $service = new UserService();
+        $response->setResult($service->listProfiles());
+        $response->send();
+    }
 }

@@ -116,4 +116,9 @@ final class UserService implements InterfaceService {
         $nuevaClaveHash = password_hash($newPassword, PASSWORD_DEFAULT);
         return $dao->updatePassword($userId, $nuevaClaveHash);
     }
+
+    public function listProfiles(): array {
+        $dao = new UserDao(Connection::get());
+        return $dao->listProfiles();
+    }
 }

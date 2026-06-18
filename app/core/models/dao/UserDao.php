@@ -214,4 +214,10 @@ final class UserDao extends BaseDao implements InterfaceDao {
         $stmt = $this->connection->prepare("UPDATE {$this->table} SET clave = :clave, resetPass = 0 WHERE id = :id");
         return $stmt->execute(["clave" => $hashedPassword, "id" => $id]);
     }
+
+    public function listProfiles(): array {
+        $stmt = $this->connection->prepare("SELECT id, nombre FROM perfiles ORDER BY nombre");
+        $stmt->execute();
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
 }

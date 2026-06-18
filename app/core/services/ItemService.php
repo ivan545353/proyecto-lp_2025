@@ -51,13 +51,13 @@ final class ItemService implements InterfaceService {
 
     private function validate(ItemDto $dto): void {
         if ($dto->getNombre() === "") {
-            throw new \Exception("<p>El <strong>nombre</strong> del producto es obligatorio.</p>");
+            throw new \Exception("El nombre del producto es obligatorio.");
         }
         if ($dto->getPrecio() <= 0) {
-            throw new \Exception("<p>El <strong>precio</strong> debe ser mayor a 0.</p>");
+            throw new \Exception("El precio debe ser mayor a 0.");
         }
         if ($dto->getStock() < 0) {
-            throw new \Exception("<p>El <strong>stock</strong> no puede ser negativo.</p>");
+            throw new \Exception("El stock no puede ser negativo.");
         }
     }
 }
