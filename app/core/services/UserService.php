@@ -82,6 +82,9 @@ final class UserService implements InterfaceService {
         if ($dto->getPerfilId() === 0) {
             throw new ValidationException("Debe seleccionar un perfil.");
         }
+        if ($dto->getCorreo() === "") {
+            throw new ValidationException("El correo es obligatorio y debe tener un formato válido.");
+        }
         // La clave no se valida en update: puede no cambiar.
     }
 
