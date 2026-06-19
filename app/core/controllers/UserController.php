@@ -91,70 +91,53 @@ final class UserController extends BaseController implements InterfaceController
     }
 
     public function changePassword(Request $request, Response $response): void {
-        $response->setController("user");
-        $response->setAction("changePassword");
-
-        $data = $request->getDataFromInput();
-
-        if (!$data) {
-            $response->setError("No se enviaron datos");
-            $response->send();
-            return;
-        }
-        // TODO Fase 4: reemplazar $_SESSION por $request->getAuthUser()
-        // En lugar de:  $userId = $_SESSION["usuarioID"] ?? null;
-        $userId = $request->getAuthUser()->usuarioID ?? null;
-        $currentPassword = $data["currentPassword"] ?? null;
-        $newPassword = $data["newPassword"] ?? null;
-        $confirmPassword = $data["confirmPassword"] ?? null;
-
-        if (!$userId || !$currentPassword || !$newPassword || !$confirmPassword) {
-            $response->setError("Datos incompletos");
-            $response->send();
-            return;
-        }
-
-        if ($newPassword !== $confirmPassword) {
-            $response->setError("Las contraseñas no coinciden");
-            $response->send();
-            return;
-        }
-
-        $service = new UserService();
-        $success = $service->changePassword($userId, $currentPassword, $newPassword);
-
-        if ($success) {
-            $response->setMessage("Contraseña actualizada correctamente");
-        } else {
-            $response->setError("La contraseña actual es incorrecta");
-        }
-
-        $response->send();
+    $authUser = $request->getAuthUser();
+    $userId = $authUser->usuarioID ?? null;
+    if (!$userId) {
+        throw new \app\core\exceptions\AuthenticationException("No autenticado.");
     }
+
+    $data = $request->getDataFromInput() ?? [];
+    $current = $data["currentPassword"] ?? "";
+    $nueva   = $data["newPassword"] ?? "";
+    $confirm = $data["confirmPassword"] ?? "";
+
+    if ($current === "" || $nueva === "" || $confirm === "") {
+        throw new \app\core\exceptions\ValidationException("Completá todos los campos.");
+    }
+    if (strlen($nueva) < 8) {
+        throw new \app\core\exceptions\ValidationException("La nueva clave debe tener al menos 8 caracteres.");
+    }
+    if ($nueva !== $confirm) {
+        throw new \app\core\exceptions\ValidationException("Las contraseñas nuevas no coinciden.");
+    }
+
+    $service = new UserService();
+    $ok = $service->changePassword((int) $userId, $current, $nueva);
+    if (!$ok) {
+        throw new \app\core\exceptions\ValidationException("La contraseña actual es incorrecta.");
+    }
+
+    $response->setMessage("Contraseña actualizada correctamente.");
+    $response->send();
+}
 
     public function getCurrent(Request $request, Response $response): void {
-        // En lugar de:  $userId = $_SESSION["usuarioID"] ?? null;
-        $userId = $request->getAuthUser()->usuarioID ?? null;
-
-        if (!$userId) {
-            $response->setController("user");
-            $response->setAction("getCurrent");
-            $response->setError("Sesión no iniciada o usuario no válido");
-            $response->send();
-            return;
-        }
-
-        $service = new UserService();
-        $usuario = $service->load($userId);
-
-        if (!$usuario) {
-            $response->setError("Usuario no encontrado");
-        } else {
-            $response->setResult($usuario->toArray());
-        }
-
-        $response->send();
+    $authUser = $request->getAuthUser();
+    $userId = $authUser->usuarioID ?? null;
+    if (!$userId) {
+        throw new \app\core\exceptions\AuthenticationException("No autenticado.");
     }
+
+    $service = new UserService();
+    $usuario = $service->load((int) $userId);
+
+    $data = $usuario->toArray();
+    unset($data["clave"]);   // nunca devolver el hash de la clave
+    $response->setResult($data);
+    $response->send();
+}
+
 
     public function perfiles(Request $request, Response $response): void {
         $service = new UserService();
