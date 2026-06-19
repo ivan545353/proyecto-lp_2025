@@ -21,23 +21,23 @@ final class SaleController extends BaseController implements InterfaceController
 
     public function save(Request $request, Response $response): void {
         $data = $request->getDataFromInput() ?? [];
-
-        // El vendedor es SIEMPRE el usuario autenticado (no se confía en el body)
         $authUser = $request->getAuthUser();
         $data["usuario_id"] = $authUser->usuarioID ?? 0;
 
+        // confirmar=true => venta directa (nace confirmada, reserva stock)
+        $confirmar = (bool) ($data["confirmar"] ?? false);
+
         $service = new SaleService();
         $dto = new SaleDto($data);
-        $service->save($dto);
+        $service->save($dto, $confirmar);
 
-        $response->setMessage("Se registró la venta correctamente.");
+        $response->setMessage($confirmar ? "Venta confirmada." : "Presupuesto registrado.");
         $response->setResult(["id" => $dto->getId()]);
         $response->send();
     }
 
     public function update(Request $request, Response $response): void {
         $data = $request->getDataFromInput() ?? [];
-
         $authUser = $request->getAuthUser();
         $data["usuario_id"] = $authUser->usuarioID ?? 0;
 
@@ -53,7 +53,6 @@ final class SaleController extends BaseController implements InterfaceController
         $service = new SaleService();
         $dto = new SaleDto(["id" => (int) $request->getId()]);
         $service->delete($dto);
-
         $response->setMessage("Se eliminó la venta correctamente.");
         $response->send();
     }
@@ -64,30 +63,40 @@ final class SaleController extends BaseController implements InterfaceController
             "usuario_id" => $request->getParameterValue("usuario_id", null),
             "limit"      => $request->getParameterValue("limit", null)
         ];
-
         $service = new SaleService();
-        $ventas = $service->list($filters);
+        $response->setResult($service->list($filters));
+        $response->send();
+    }
 
-        $response->setResult($ventas);
+    public function updateEstado(Request $request, Response $response): void {
+        $data = $request->getDataFromInput() ?? [];
+        $estado = $data["estado"] ?? $request->getParameterValue("estado", null);
+        if (!$estado) {
+            throw new ValidationException("Falta indicar el nuevo estado.");
+        }
+        $service = new SaleService();
+        $service->updateEstado((int) $request->getId(), $estado);
+        $response->setMessage("Se actualizó el estado de la venta.");
         $response->send();
     }
 
     /**
-     * Cambia el estado de la venta: confirmar, cobrar o anular.
-     * URL: PUT /sale/updateEstado/{id}  body: { "estado": "confirmada" }
+     * Registra un pago (total o parcial).
+     * PUT /sale/cobrar/{id}  body: { metodo, monto, referencia? }
      */
-    public function updateEstado(Request $request, Response $response): void {
+    public function cobrar(Request $request, Response $response): void {
         $data = $request->getDataFromInput() ?? [];
-        $estado = $data["estado"] ?? $request->getParameterValue("estado", null);
+        $authUser = $request->getAuthUser();
 
-        if (!$estado) {
-            throw new ValidationException("Falta indicar el nuevo estado.");
-        }
+        $metodo     = $data["metodo"] ?? "";
+        $monto      = (float) ($data["monto"] ?? 0);
+        $referencia = $data["referencia"] ?? "";
+        $usuarioId  = $authUser->usuarioID ?? 0;
 
         $service = new SaleService();
-        $service->updateEstado((int) $request->getId(), $estado);
+        $service->cobrar((int) $request->getId(), $metodo, $monto, $referencia, $usuarioId);
 
-        $response->setMessage("Se actualizó el estado de la venta.");
+        $response->setMessage("Pago registrado.");
         $response->send();
     }
 }
